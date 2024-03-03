@@ -16,6 +16,7 @@ return {
                     "clangd",
                     --"codelldb",
                     "gopls",
+                    "rust_analyzer",
                 },
             })
         end,
@@ -25,6 +26,7 @@ return {
         config = function()
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
             local lspconfig = require("lspconfig")
+            local util = require("lspconfig/util")
             lspconfig.lua_ls.setup({
                 capabilities = capabilities,
             })
@@ -39,6 +41,22 @@ return {
             })
             lspconfig.gopls.setup({
                 capabilities = capabilities,
+            })
+            lspconfig.rust_analyzer.setup({
+                capabilities = capabilities,
+                on_attach = on_attach,
+                filetypes = {"rust"},
+                root_dir = util.root_pattern("Cargo.toml"),
+                -- cmd = {
+                --     "rustup", "run", "stable", "rust-analyzer",
+                -- },
+                settings = {
+                    ['rust-analyzer'] = {
+                        cargo = {
+                            allFeatures = true,
+                        }
+                    }
+                }
             })
 
             vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Show symbol information" })
