@@ -1,9 +1,3 @@
--- Theme & transparency
-vim.cmd.colorscheme 'default'
-vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
-vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' })
-vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })
-
 -- Vim Options
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
@@ -34,6 +28,7 @@ vim.opt.list = true -- Sets how neovim will display certain whitespace character
 vim.opt.showmode = false
 vim.opt.signcolumn = "auto"
 vim.o.winborder = "rounded"
+vim.o.pumborder = "rounded"
 
 -- Behavior settings
 vim.o.mouse = 'a'
@@ -50,140 +45,85 @@ vim.o.splitbelow = true
 vim.o.inccommand = 'split'
 vim.o.confirm = true
 
--- Bootstrap lazy.nvim
-local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
-    local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-    local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
-    if vim.v.shell_error ~= 0 then
-        vim.api.nvim_echo({
-            { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-            { out,                            "WarningMsg" },
-            { "\nPress any key to exit..." },
-        }, true, {})
-        vim.fn.getchar()
-        os.exit(1)
-    end
-end
-vim.opt.rtp:prepend(lazypath)
-
--- Setup lazy.nvim
-require("lazy").setup({
-    -- Plugins go here
-    spec = {
-        -- Theme
-        {
-            "rebelot/kanagawa.nvim",
-            enabled = false,
-            lazy = false,
-            priority = 1000,
-            config = function()
-                require('kanagawa').setup({
-                    transparent = true,
-                    terminalColors = true,
-                })
-                vim.cmd([[colorscheme kanagawa]])
-            end
-        },
-
-        -- Mini modules
-        {
-            'echasnovski/mini.nvim',
-            config = function()
-                require('mini.ai').setup()
-                require('mini.surround').setup()
-                require('mini.completion').setup()
-                require('mini.icons').setup()
-                require('mini.snippets').setup()
-                require('mini.basics').setup()
-                require('mini.extra').setup()
-                require('mini.statusline').setup()
-                require('mini.pick').setup({
-                    vim.keymap.set("n", "<leader>ff", "<cmd>Pick files<cr>", { silent = true, desc = "Find files" }),
-                    vim.keymap.set("n", "<leader>fb", "<cmd>Pick buffers<cr>", { silent = true, desc = "Buffers" }),
-                    vim.keymap.set("n", "<leader>fh", "<cmd>Pick help<cr>", { silent = true, desc = "Find Help" }),
-                    vim.keymap.set("n", "<leader>fg", "<cmd>Pick grep_live<cr>", { silent = true, desc = "Live Grep" }),
-                    vim.keymap.set("n", "<leader>fd", "<cmd>Pick diagnostic<cr>", { silent = true, desc = "Diagnostics" }),
-                })
-                require('mini.files').setup({
-                    vim.keymap.set("n", "<leader>e", "<cmd>lua MiniFiles.open()<cr>", { silent = true, desc = "File Explorer" }),
-                })
-                require('mini.tabline').setup()
-            end
-        },
-        {
-            'nvim-treesitter/nvim-treesitter',
-            branch = 'main',
-            lazy = false,
-            build = ':TSUpdate',
-            config = function ()
-                local config = require("nvim-treesitter.config")
-                config.setup({
-                    ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'python', 'go', 'gosum', 'gomod' },
-                    highlight = { enabled = true },
-                    indent = { enabled = true },
-                })
-            end
-        },
-        {
-            'neovim/nvim-lspconfig',
-            dependencies = {
-                {
-                    "folke/lazydev.nvim",
-                    ft = "lua",
-                    opts = {
-                        library = {
-                            { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-                        },
-                    },
-                },
-            },
-        },
-    },
-
-    install = { colorscheme = { "default" } },
-    checker = { enabled = false },
-    ui = { border = "rounded" },
+-- Packages
+vim.pack.add({
+    { src = 'https://github.com/nvim-mini/mini.nvim' },
+    { src = 'https://github.com/nvim-treesitter/nvim-treesitter' },
+    { src = 'https://github.com/neovim/nvim-lspconfig' },
+    { src = 'https://github.com/folke/snacks.nvim' },
+    { src = 'https://github.com/rebelot/kanagawa.nvim' },
+    { src = 'https://github.com/EdenEast/nightfox.nvim' },
 })
 
 -- LSP
-vim.api.nvim_create_autocmd('LspAttach', {
-    desc = 'LSP actions',
+vim.api.nvim_create_autocmd("LspAttach", {
+    desc = "LSP keymaps",
     callback = function(event)
         local opts = { buffer = event.buf }
 
-        -- Display documentation of the symbol under the cursor
-        vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<cr>', opts)
-
-        -- Jump to the definition
-        vim.keymap.set('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<cr>', opts)
-
-        -- Format current file
-        vim.keymap.set({ 'n', 'x' }, 'gf', '<cmd>lua vim.lsp.buf.format({async = true})<cr>', opts)
-
-        -- Displays a function's signature information
-        vim.keymap.set('i', '<C-s>', '<cmd>lua vim.lsp.buf.signature_help()<cr>', opts)
-
-        -- Jump to declaration
-        vim.keymap.set('n', '<leader>gD', '<cmd>lua vim.lsp.buf.declaration()<cr>', opts)
-
-        -- Lists all the implementations for the symbol under the cursor
-        vim.keymap.set('n', '<leader>li', '<cmd>lua vim.lsp.buf.implementation()<cr>', opts)
-
-        -- Jumps to the definition of the type symbol
-        vim.keymap.set('n', '<leader>lt', '<cmd>lua vim.lsp.buf.type_definition()<cr>', opts)
-
-        -- Lists all the references
-        vim.keymap.set('n', '<leader>lr', '<cmd>lua vim.lsp.buf.references()<cr>', opts)
-
-        -- Renames all references to the symbol under the cursor
-        vim.keymap.set('n', '<leader>ln', '<cmd>lua vim.lsp.buf.rename()<cr>', opts)
-
-        -- Selects a code action available at the current cursor position
-        vim.keymap.set('n', '<leader>ca', '<cmd>lua vim.lsp.buf.code_action()<cr>', opts)
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set({ "n", "x" }, "gf", function()
+            vim.lsp.buf.format({ async = true })
+        end, opts)
+        vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, opts)
+        vim.keymap.set("n", "<leader>gD", vim.lsp.buf.declaration, opts)
+        vim.keymap.set("n", "<leader>li", vim.lsp.buf.implementation, opts)
+        vim.keymap.set("n", "<leader>lt", vim.lsp.buf.type_definition, opts)
+        vim.keymap.set("n", "<leader>lr", vim.lsp.buf.references, opts)
+        vim.keymap.set("n", "<leader>ln", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
     end,
 })
-vim.lsp.enable({ 'lua_ls', 'pylsp', 'gopls'})
+
+vim.lsp.config("lua_ls", {
+    settings = {
+        Lua = { workspace = { library = vim.api.nvim_get_runtime_file("", true), }, },
+    },
+})
+
+vim.lsp.enable({ "lua_ls", "pylsp", "gopls", "clangd", "zls" })
+
+-- Treesitter
+local treesitter = require("nvim-treesitter")
+treesitter.setup({})
+treesitter.install({ "lua", "vim", "vimdoc", "bash", "c", "cpp", "go", "python", "json", "markdown", "markdown_inline",
+    "zig" })
+vim.api.nvim_create_autocmd("FileType", {
+    callback = function()
+        pcall(vim.treesitter.start)
+    end,
+})
+
+-- Diagnostics
+vim.diagnostic.config {
+update_in_insert = false,
+severity_sort = true,
+float = { border = 'rounded', source = 'if_many' },
+underline = { severity = { min = vim.diagnostic.severity.WARN } },
+virtual_text = true, -- Text shows up at the end of the line
+virtual_lines = false, -- Text shows up underneath the line, with virtual lines
+jump = {
+  on_jump = function(_, bufnr)
+    vim.diagnostic.open_float {
+      bufnr = bufnr,
+      scope = 'cursor',
+      focus = false,
+    }
+  end,
+},
+}
+
+-- Package setups
+require('snacks').setup({
+    picker = { enabled = true },
+})
+require('mini.surround').setup()
+require('mini.completion').setup()
+require('mini.pairs').setup()
+require('mini.icons').setup()
+require('mini.snippets').setup()
+require('mini.statusline').setup()
 
 -- [ Keymaps ]
 vim.keymap.set("i", "jj", "<esc>", { silent = true })
@@ -212,7 +152,15 @@ vim.keymap.set('n', '<leader>bb', '<cmd>e #<cr>', { desc = 'Switch to Other Buff
 vim.keymap.set('n', '<leader>`', '<cmd>e #<cr>', { desc = 'Switch to Other Buffer' })
 
 -- Explorer
--- vim.keymap.set('n', '<leader>e', ':Ex<cr>', { silent = true, desc = 'Open Netwrx' })
+vim.keymap.set('n', '<leader>e', ':Ex<cr>', { silent = true, desc = 'Open Netwrx' })
+
+-- Picker
+local picker = Snacks.picker
+vim.keymap.set("n", "<leader>ff", picker.files, { silent = true, desc = "Find files" })
+vim.keymap.set("n", "<leader>fb", picker.buffers, { silent = true, desc = "Buffers" })
+vim.keymap.set("n", "<leader>fh", picker.help, { silent = true, desc = "Find Help" })
+vim.keymap.set("n", "<leader>fg", picker.grep, { silent = true, desc = "Live Grep" })
+vim.keymap.set("n", "<leader>fd", picker.diagnostics, { silent = true, desc = "Diagnostics" })
 
 -- Navigate in Insert mode (emacs)
 vim.keymap.set('i', '<C-b>', '<Left>', { silent = true })
@@ -232,3 +180,9 @@ end, { desc = "Edit Config" })
 
 -- Exit terminal mode using escape
 vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>")
+
+-- Theme & transparency
+vim.cmd.colorscheme 'nightfox'
+vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
+vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'none' })
+vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'none' })
