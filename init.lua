@@ -113,11 +113,17 @@ require("lazy").setup({
         },
         {
             'nvim-treesitter/nvim-treesitter',
+            branch = 'main',
+            lazy = false,
             build = ':TSUpdate',
-            opts = {
-                ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'python' },
-                auto_install = true,
-            }
+            config = function ()
+                local config = require("nvim-treesitter.config")
+                config.setup({
+                    ensure_installed = { 'bash', 'c', 'html', 'lua', 'markdown', 'python', 'go', 'gosum', 'gomod' },
+                    highlight = { enabled = true },
+                    indent = { enabled = true },
+                })
+            end
         },
         {
             'neovim/nvim-lspconfig',
@@ -177,7 +183,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         vim.keymap.set('n', '<leader>ca', '<cmd>lua vim.lsp.buf.code_action()<cr>', opts)
     end,
 })
-vim.lsp.enable({ 'lua_ls', 'pylsp' })
+vim.lsp.enable({ 'lua_ls', 'pylsp', 'gopls'})
 
 -- [ Keymaps ]
 vim.keymap.set("i", "jj", "<esc>", { silent = true })
